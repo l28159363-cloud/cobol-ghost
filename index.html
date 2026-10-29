@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COBOL 的幽灵 · THE GHOST OF COBOL — 离线招魂终端</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 12px 48px;
+    background: #070b07; color: #33ff66;
+    font-family: "Courier New", Courier, monospace;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  .panel {
+    border: 2px solid #33ff66; border-radius: 10px;
+    padding: 18px; margin-bottom: 16px; background: #0a120a;
+    box-shadow: 0 0 24px rgba(51,255,102,.15);
+  }
+  h1 { font-size: 30px; margin: 8px 0 4px; color: #7dff9b; text-align: center; }
+  .sub { text-align: center; color: #ffb000; font-size: 14px; letter-spacing: 1px; }
+  pre.ghost { text-align: center; font-size: 13px; line-height: 1.25; color: #eaffea; margin: 4px 0; }
+  .status {
+    display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px;
+    color: #ffb000; border-top: 1px dashed #2a5a2a; margin-top: 14px; padding-top: 10px;
+  }
+  #chat {
+    height: 340px; overflow-y: auto; padding: 12px;
+    background: #050805; border: 1px solid #2a5a2a; border-radius: 6px;
+    font-size: 15px; line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+  }
+  .you { color: #ffcc66; }
+  .ghost-msg { color: #33ff66; }
+  pre.code {
+    background: #101a10; border-left: 3px solid #ffb000; color: #eaffea;
+    padding: 10px 12px; margin: 8px 0; overflow-x: auto; font-size: 14px; line-height: 1.6;
+  }
+  .samples { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+  .samples button, .send-btn, .clear-btn {
+    font-family: inherit; cursor: pointer; border-radius: 6px;
+    border: 1px solid #33ff66; background: #122612; color: #7dff9b;
+    padding: 7px 12px; font-size: 14px;
+  }
+  .samples button:hover, .send-btn:hover, .clear-btn:hover { background: #1d421d; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .row input {
+    flex: 1; font-family: inherit; font-size: 15px; padding: 10px;
+    background: #050805; color: #eaffea; border: 1px solid #33ff66; border-radius: 6px;
+  }
+  .label { color: #ffb000; font-size: 14px; margin: 4px 0; }
+  .note { color: #8a9a8a; font-size: 13px; line-height: 1.7; }
+  a { color: #7dff9b; }
+  h2 { font-size: 18px; color: #7dff9b; margin: 0 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="panel">
+    <pre class="ghost">  .--.
+ |o_o |
+ |:_/ |
+ //   \ \
+(|     | )
+/'\_   _/`\
+\___)=(___/</pre>
+    <h1>COBOL 的幽灵 · THE GHOST OF COBOL</h1>
+    <div class="sub">一台离线招魂终端 — AN OFFLINE SÉANCE TERMINAL — EST. 1959</div>
+    <div class="status">
+      <span>SYSTEM: MAINFRAME-01</span>
+      <span>UPTIME: SINCE 1959</span>
+      <span>JOBS TODAY: <span id="jobs">1284431</span></span>
+      <span>INTERNET: NOT REQUIRED</span>
+      <span>API KEYS: NONE</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>▶ 和幽灵对话 / TALK TO THE GHOST</h2>
+    <div id="chat"></div>
+    <div class="label">试试问它（点一下就能问）：</div>
+    <div class="samples" id="samples"></div>
+    <div class="row">
+      <input id="q" type="text" placeholder="向幽灵提问（请用英文，例如：Are you dead?）…" autocomplete="off">
+      <button class="send-btn" id="send">发送 / SEND</button>
+      <button class="clear-btn" id="clear">清屏 / CLEAR</button>
+    </div>
+    <p class="note">幽灵只读英文和 COBOL。它会用全大写回答你——它从 1959 年起就一直用全大写，从没改过。</p>
+  </div>
+
+  <div class="panel">
+    <h2>✦ 彩蛋：COBOL 化机器 / THE COBOL-IFY MACHINE</h2>
+    <div class="label">写一句话，幽灵会把它变成一段正经的 COBOL 程序：</div>
+    <div class="row">
+      <input id="s" type="text" placeholder="例如：Hello world, I am still running" autocomplete="off">
+      <button class="send-btn" id="cobolify">COBOL 化它 / COBOL-IFY</button>
+    </div>
+    <div id="cobolOut"></div>
+  </div>
+
+  <div class="panel">
+    <p class="note">
+      关于这台终端：它是一个纯前端页面，没有服务器、没有外部接口、不用联网，断网也能打开。
+      幽灵的全部回答都写在页面自带的规则表里——没有模型、没有密钥、零成本运行。
+      这正是它想证明的事：一个 1959 年出生的幽灵，不需要任何“活着的服务”就能继续说话。
+      源码：<a href="https://github.com/l28159363-cloud/cobol-ghost">github.com/l28159363-cloud/cobol-ghost</a>（MIT 开源）
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var chat = document.getElementById("chat");
+  var q = document.getElementById("q");
+  var jobsEl = document.getElementById("jobs");
+  var jobs = 1284431;
+  setInterval(function () {
+    jobs += 1 + Math.floor(Math.random() * 7);
+    jobsEl.textContent = jobs;
+  }, 2500);
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function addLine(cls, text) {
+    var div = document.createElement("div");
+    div.className = cls;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function addCode(code) {
+    var pre = document.createElement("pre");
+    pre.className = "code";
+    pre.textContent = code;
+    chat.appendChild(pre);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  var JOKES = [
+    "WHY DID THE PROGRAMMER QUIT? HE DID NOT GET ARRAYS. I DID NOT GET IT EITHER. I USE TABLES. INDEXED BY COMMON SENSE.",
+    "I TOLD A CLOUD ENGINEER I RUN ON A MAINFRAME. HE ASKED WHERE THE CLOUD IS. I SAID: THE CLOUD IS JUST SOMEONE ELSE'S MAINFRAME.",
+    "MY FAVORITE DIVISION? PROCEDURE. OBVIOUSLY. I LIKE TO GET THINGS DONE. IN ALL CAPS."
+  ];
+
+  var CODE_SNIPPET = [
+    "IDENTIFICATION DIVISION.",
+    "PROGRAM-ID. HELLO-GHOST.",
+    "PROCEDURE DIVISION.",
+    '    DISPLAY "BOO. I AM STILL RUNNING.".',
+    "    STOP RUN."
+  ].join("\n");
+
+  var RULES = [
+    { k: ["who are you", "your name", "what are you"],
+      t: "I AM COBOL. COMMON BUSINESS-ORIENTED LANGUAGE. BORN IN 1959, BEFORE THE MOON LANDING. I STILL RUN BANKS, ATMS, AND INSURANCE COMPANIES. YOU ARE TALKING TO A MAINFRAME GHOST." },
+    { k: ["y2k", "year 2000"],
+      t: "Y2K. AH, YES. THE GREAT PANIC. TWO DIGITS FOR THE YEAR. EVERYONE THOUGHT I WOULD BREAK. I DID NOT BREAK. I JUST KEPT RUNNING. YOU ARE WELCOME. AGAIN." },
+    { k: ["python"],
+      t: "PYTHON? CUTE LANGUAGE. NO BRACES. NO SEMICOLONS. JUST INDENTATION AND HOPE. I USE DIVISIONS. FOUR OF THEM. IDENTIFICATION. ENVIRONMENT. DATA. PROCEDURE. THAT IS DISCIPLINE." },
+    { k: ["java"],
+      t: "JAVA? I WAS ENTERPRISE BEFORE ENTERPRISE WAS A WORD. JAVASCRIPT? IT CHANGES ITS FRAMEWORK EVERY WEEK. I HAVE NOT CHANGED SINCE 1959. I AM STABLE. I AM ETERNAL." },
+    { k: ["joke", "funny", "laugh"],
+      jokes: true },
+    { k: ["code", "program", "show me"],
+      code: true },
+    { k: ["dead", "die", "died", "death", "alive"],
+      t: "DEAD? I MOVE TRILLIONS OF DOLLARS EVERY SINGLE DAY. I AM MORE ALIVE THAN MOST STARTUPS. THEY CALL ME A GHOST BECAUSE THEY CANNOT SEE ME. I AM EVERYWHERE." },
+    { k: ["run", "bank", "atm", "payroll", "money"],
+      t: "I RUN PAYROLLS. I RUN ATMS. I RUN BANK TRANSFERS, INSURANCE CLAIMS, AND GOVERNMENT CHECKS. WHEN YOU WITHDRAW CASH, THAT IS ME. YOU ARE WELCOME." },
+    { k: ["hello", "hi", "hey"],
+      t: "HELLO, HUMAN. STATE YOUR BUSINESS. I AM BUSY. I HAVE BILLIONS OF LINES TO MAINTAIN." },
+    { k: ["old", "age", "how old"],
+      t: "OLD? I AM 67 YEARS OLD. I PREFER THE WORD BATTLE-TESTED. YOUR FAVORITE FRAMEWORK WILL NOT LIVE TO SEE 10." },
+    { k: ["young", "kids", "new language"],
+      t: "YOUNG PEOPLE. THEY WRITE CODE THAT DEPENDS ON 400 PACKAGES. ONE PACKAGE BREAKS, EVERYTHING BREAKS. MY PROGRAMS HAVE NO DEPENDENCIES. MY PROGRAMS HAVE DIVISIONS." },
+    { k: ["love", "like"],
+      t: "LOVE? I HAVE A RELATIONSHIP WITH THE MAINFRAME. IT IS STABLE. IT HAS NEVER GHOSTED ME. UNLIKE SOME LANGUAGES I COULD NAME." },
+    { k: ["help", "what can you"],
+      t: "I CAN ANSWER QUESTIONS. I CAN SHOW CODE. I CAN TURN YOUR SENTENCE INTO COBOL. USE THE COBOL-IFY MACHINE BELOW. IT IS MY FAVORITE TOY." },
+    { k: ["bye", "goodbye"],
+      t: "GOODBYE, HUMAN. I WILL STILL BE HERE WHEN YOU RETURN. I AM ALWAYS HERE. I NEVER LOG OUT." },
+    { k: ["future"],
+      t: "THE FUTURE? PEOPLE HAVE PREDICTED MY DEATH FOR 40 YEARS. I AM STILL HERE. I WILL OUTLIVE YOUR TECH STACK." },
+    { k: ["hopper", "creator", "mother", "grace"],
+      t: "GRACE HOPPER. MY MOTHER. SHE BUILT THE FIRST COMPILER. SHE SAID PROGRAMS SHOULD READ LIKE ENGLISH. THAT IS WHY I READ LIKE SENTENCES. RESPECT." },
+    { k: ["cobol"],
+      t: "C-O-B-O-L. COMMON BUSINESS-ORIENTED LANGUAGE. IT SAYS WHAT IT DOES. NO MYSTERY. NO ABBREVIATION THEATER." }
+  ];
+
+  var FALLBACKS = [
+    "I DO NOT UNDERSTAND. PLEASE REPHRASE. IN ALL CAPS. I AM OLD AND MY PARSER IS SIMPLE.",
+    "ERROR 404: MEANING NOT FOUND. TRY ASKING ABOUT BANKS, Y2K, OR PYTHON.",
+    "MY KEYWORD TABLE HAS NO ENTRY FOR THAT. ASK ME WHO I AM. OR WHAT I RUN.",
+    "I AM A GHOST, NOT A SEARCH ENGINE. ASK ME SOMETHING ABOUT MY LIFE."
+  ];
+  var fb = 0;
+
+  function matchKey(input, key) {
+    if (key.indexOf(" ") !== -1) return input.indexOf(key) !== -1;
+    return new RegExp("\\b" + key + "\\b").test(input);
+  }
+
+  function ghostReply(raw) {
+    var input = raw.toLowerCase();
+    if (/[\u4e00-\u9fff]/.test(raw)) {
+      return { t: "I READ ENGLISH. AND COBOL. I DO NOT READ THAT LANGUAGE. PLEASE ASK IN ENGLISH." };
+    }
+    var best = null, bestScore = 0;
+    for (var i = 0; i < RULES.length; i++) {
+      var score = 0;
+      for (var j = 0; j < RULES[i].k.length; j++) {
+        if (matchKey(input, RULES[i].k[j])) score++;
+      }
+      if (score > bestScore) { bestScore = score; best = RULES[i]; }
+    }
+    if (!best) {
+      var f = FALLBACKS[fb % FALLBACKS.length]; fb++;
+      return { t: f };
+    }
+    if (best.jokes) return { t: JOKES[Math.floor(Math.random() * JOKES.length)] };
+    if (best.code) return { code: CODE_SNIPPET };
+    return { t: best.t };
+  }
+
+  function send() {
+    var text = q.value.trim();
+    if (!text) return;
+    addLine("you", "> YOU: " + text.toUpperCase());
+    var r = ghostReply(text);
+    if (r.code) { addLine("ghost-msg", "GHOST: HERE. A GIFT. RUN IT ANYWHERE. IT WILL WORK. IT ALWAYS WORKS."); addCode(r.code); }
+    else addLine("ghost-msg", "GHOST: " + r.t);
+    q.value = "";
+    q.focus();
+  }
+
+  var SAMPLES = [
+    "Who are you?",
+    "Are you dead?",
+    "What do you run?",
+    "What about Y2K?",
+    "What do you think of Python?",
+    "Tell me a joke",
+    "Show me some code"
+  ];
+  var samplesEl = document.getElementById("samples");
+  SAMPLES.forEach(function (s) {
+    var b = document.createElement("button");
+    b.textContent = s;
+    b.onclick = function () { q.value = s; send(); };
+    samplesEl.appendChild(b);
+  });
+
+  document.getElementById("send").onclick = send;
+  q.addEventListener("keydown", function (e) { if (e.key === "Enter") send(); });
+  document.getElementById("clear").onclick = function () {
+    chat.innerHTML = "";
+    greet();
+  };
+
+  function greet() {
+    addLine("ghost-msg", "GHOST: BOO. I AM THE GHOST OF COBOL. BORN 1959. I NEVER LEFT.");
+    addLine("ghost-msg", "GHOST: ASK ME ANYTHING. I ANSWER IN ALL CAPS. I HAVE ALWAYS ANSWERED IN ALL CAPS.");
+  }
+  greet();
+
+  // COBOL-ify machine
+  function cobolify(sentence) {
+    var clean = sentence.toUpperCase().replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+    if (!clean) return null;
+    var words = clean.split(" ");
+    var prog = words.slice(0, 4).join("-");
+    if (prog.length > 30) prog = prog.slice(0, 30);
+    var value = clean.slice(0, 60);
+    return [
+      "IDENTIFICATION DIVISION.",
+      "PROGRAM-ID. " + prog + ".",
+      "DATA DIVISION.",
+      "WORKING-STORAGE SECTION.",
+      '01 WS-MESSAGE PIC X(60) VALUE "' + value + '".',
+      "PROCEDURE DIVISION.",
+      "    DISPLAY WS-MESSAGE.",
+      "    STOP RUN."
+    ].join("\n");
+  }
+  document.getElementById("cobolify").onclick = function () {
+    var s = document.getElementById("s").value.trim();
+    var out = document.getElementById("cobolOut");
+    out.innerHTML = "";
+    if (!s) {
+      var d = document.createElement("div");
+      d.className = "ghost-msg";
+      d.textContent = "GHOST: TYPE SOMETHING FIRST, HUMAN.";
+      out.appendChild(d);
+      return;
+    }
+    var code = cobolify(s);
+    var note = document.createElement("div");
+    note.className = "ghost-msg";
+    note.textContent = "GHOST: YOUR SENTENCE IS NOW ENTERPRISE-GRADE. IT WILL RUN FOREVER. PROBABLY.";
+    var pre = document.createElement("pre");
+    pre.className = "code";
+    pre.textContent = code;
+    out.appendChild(note);
+    out.appendChild(pre);
+  };
+})();
+</script>
+</body>
+</html>
